@@ -211,6 +211,17 @@ open class Socket: Hashable, Equatable {
         return String(cString: hostBuffer)
     }
 
+    public func peerport() throws -> in_port_t {
+        var addr = sockaddr(), len: socklen_t = socklen_t(MemoryLayout<sockaddr>.size)
+        if getpeername(self.socketFileDescriptor, &addr, &len) != 0 {
+            throw SocketError.getPeerNameFailed(Errno.description())
+        }
+
+        let uFirst = UInt8(bitPattern: addr.sa_data.0)
+        let uSecond = UInt8(bitPattern: addr.sa_data.1)
+        return (UInt16(uFirst) << 8) | UInt16(uSecond)
+    }
+
     public class func setNoSigPipe(_ socket: Int32) {
         #if os(Linux)
             // There is no SO_NOSIGPIPE in Linux (nor some other systems). You can instead use the MSG_NOSIGNAL flag when calling send(),
